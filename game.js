@@ -1,28 +1,20 @@
-define(['terrain', 'gl-matrix-min'], function(Terrain, M) {
+define(['terrain', 'craft', 'gl-matrix-min'], function(Terrain, Craft, M) {
   return function(gl) {
     var terrain = new Terrain(gl);
+    var craft = new Craft(terrain);
     
     var projection = M.mat4.create();
     var camera = M.mat4.create();
     var view = M.mat4.create();
     var viewProjection = M.mat4.create();
-    var normal = M.vec3.create();
-    var at = M.vec3.create();
     var tmp = M.vec3.create();
     
-    var angle = 0;
-    
-    this.update = function(timeStep) {
-      angle += timeStep * 0.04;
-      var cx = 128 + Math.sin(angle) * 100;
-      var cy = 128 + Math.cos(angle) * 100;
-      at[0] = Math.cos(angle);
-      at[1] = -Math.sin(angle);
-      at[2] = 0;
-      terrain.normalAt(normal, cx, cy);
+    this.update = function(timeStep, input) {
+      craft.update(timeStep, input);
+      var at = craft.at;
+      var normal = craft.normal;
+      var pos = craft.pos;
       M.vec3.cross(tmp, at, normal);
-      M.vec3.normalize(tmp, tmp);
-      M.vec3.cross(at, normal, tmp);
       camera[0] = tmp[0];
       camera[1] = tmp[1];
       camera[2] = tmp[2];
@@ -35,9 +27,10 @@ define(['terrain', 'gl-matrix-min'], function(Terrain, M) {
       camera[9] = -at[1];
       camera[10] = -at[2];
       camera[11] = 0;
-      camera[12] = cx;
-      camera[13] = cy;
-      camera[14] = terrain.heightAt(cx, cy) + 1;
+      M.vec3.scaleAndAdd(tmp, pos, normal, 1);
+      camera[12] = tmp[0];
+      camera[13] = tmp[1];
+      camera[14] = tmp[2];
       camera[15] = 1;
       M.mat4.invert(view, camera);
     };
