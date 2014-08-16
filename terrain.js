@@ -1,7 +1,7 @@
 "use strict";
 /* global define */
 
-define(['shader'], function(Shader) {
+define(['shader', 'gl-matrix-min'], function(Shader, M) {
   return function(gl) {
     var SIZE = 256;
 
@@ -35,7 +35,27 @@ define(['shader'], function(Shader) {
       }
     }
     
-    var vertexData = new Float32Array(SIZE * SIZE * 4);
+    this.heightAt = function(x, y) {
+      x = Math.max(0, Math.min(SIZE, x));
+      y = Math.max(0, Math.min(SIZE, y));
+      var xi = Math.min(SIZE-1, Math.floor(x));
+      var yi = Math.min(SIZE-1, Math.floor(y));
+      var o = xi + yi * SIZE;
+      x -= xi;
+      y -= yi;
+      var a = height[o] * (1 - x) + height[o + 1] * x;
+      var b = height[o + SIZE] * (1 - x) + height[o + 1 + SIZE] * x;
+      return a * (1 - y) + b * y;
+    };
+    
+    this.normalAt = function(out, x, y) {
+      out[0] = this.heightAt(x - 0.5, y) - this.heightAt(x + 0.5, y);
+      out[1] = this.heightAt(x, y - 0.5) - this.heightAt(x, y + 0.5);
+      out[2] = 1;
+      M.vec3.normalize(out, out);
+    };
+
+    var vertexData = new Float32Array(SIZE * SIZE* 4);
     for(y = 0; y < SIZE; ++y) {
       for(x = 0; x < SIZE; ++x) {
         var h = height[index(x, y)];
@@ -50,6 +70,7 @@ define(['shader'], function(Shader) {
     var vertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
+    vertexData = undefined;
     
     var indexData = new Uint16Array((SIZE-1) * (SIZE-1) * 6);
     for(y = 0; y < SIZE-1; ++y) {
@@ -66,6 +87,7 @@ define(['shader'], function(Shader) {
     var indexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexData, gl.STATIC_DRAW);
+    indexData = undefined;
     
     var shader = new Shader(gl, {
       shared: [
