@@ -18,9 +18,9 @@ define(['shader', 'gl-matrix-min'], function(Shader, M) {
       height[i] += ((a + b) * 9 - (a0 + b0) * 1) / 16 * factor + (Math.random() * 2 - 1) * scale;
     }
 
-    var x, y;
+    var x, y, i;
     for(var size = SIZE >> 1; size >= 1; size >>= 1) {
-      var scale = Math.pow(size / SIZE * 2, 1.3) * SIZE / 4;
+      var scale = Math.pow(size / SIZE * 2, 1.3) * SIZE / 8;
       for(x = 0; x < SIZE; x += size * 2) {
         for(y = 0; y < SIZE; y += size * 2) {
           linear(x, y, size, 0, scale, 1);
@@ -35,6 +35,19 @@ define(['shader', 'gl-matrix-min'], function(Shader, M) {
       }
     }
     
+    var samples = [];
+    for(x = 0; x < SIZE; x += 32) {
+      for(y = 0; y < SIZE; y += 32) {
+        samples.push(height[x + y * SIZE]);
+      }
+    }
+    samples.sort();
+    var waterHeight = samples[Math.floor(samples.length / 3)];
+    
+    for(i = 0; i < SIZE*SIZE; ++i) {
+      height[i] -= waterHeight;
+    }
+
     this.heightAt = function(x, y) {
       x = Math.max(0, Math.min(SIZE, x));
       y = Math.max(0, Math.min(SIZE, y));
@@ -45,7 +58,7 @@ define(['shader', 'gl-matrix-min'], function(Shader, M) {
       y -= yi;
       var a = height[o] * (1 - x) + height[o + 1] * x;
       var b = height[o + SIZE] * (1 - x) + height[o + 1 + SIZE] * x;
-      return a * (1 - y) + b * y;
+      return Math.max(0, a * (1 - y) + b * y);
     };
     
     this.normalAt = function(out, x, y) {
@@ -75,7 +88,7 @@ define(['shader', 'gl-matrix-min'], function(Shader, M) {
     var indexData = new Uint16Array((SIZE-1) * (SIZE-1) * 6);
     for(y = 0; y < SIZE-1; ++y) {
       for(x = 0; x < SIZE-1; ++x) {
-        var i = (x + y * (SIZE-1)) * 6;
+        i = (x + y * (SIZE-1)) * 6;
         indexData[i+0] = x + y * SIZE;
         indexData[i+1] = (x + 1) + y * SIZE;
         indexData[i+2] = (x + 1) + (y + 1) * SIZE;
@@ -91,13 +104,15 @@ define(['shader', 'gl-matrix-min'], function(Shader, M) {
     
     var shader = new Shader(gl, {
       shared: [
-        'varying lowp vec3 color;'
+        'varying lowp vec3 color;',
+        'varying mediump float height;'
       ],
       vertex: [
         'attribute vec4 pos;',
         'uniform mat4 viewProjection;',
         'void main() {',
         '  color = vec3(0.5 + pos.w * 0.3);',
+        '  height = pos.z;',
         '  gl_Position = viewProjection * vec4(pos.x, pos.y, pos.z, 1.0);',
         '}'
       ],

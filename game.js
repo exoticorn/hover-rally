@@ -1,7 +1,8 @@
-define(['terrain', 'craft', 'gl-matrix-min'], function(Terrain, Craft, M) {
+define(['terrain', 'craft', 'water', 'gl-matrix-min'], function(Terrain, Craft, Water, M) {
   return function(gl) {
     var terrain = new Terrain(gl);
     var craft = new Craft(terrain);
+    var water = new Water(gl);
     
     var projection = M.mat4.create();
     var camera = M.mat4.create();
@@ -27,7 +28,7 @@ define(['terrain', 'craft', 'gl-matrix-min'], function(Terrain, Craft, M) {
       camera[9] = -at[1];
       camera[10] = -at[2];
       camera[11] = 0;
-      M.vec3.scaleAndAdd(tmp, pos, normal, 1);
+      M.vec3.scaleAndAdd(tmp, pos, normal, 0.2);
       camera[12] = tmp[0];
       camera[13] = tmp[1];
       camera[14] = tmp[2];
@@ -41,6 +42,7 @@ define(['terrain', 'craft', 'gl-matrix-min'], function(Terrain, Craft, M) {
       M.mat4.mul(viewProjection, projection, view);
     
       terrain.render(viewProjection);
+      water.render(viewProjection);
     };
   };
 });

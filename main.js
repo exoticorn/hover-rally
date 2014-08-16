@@ -39,6 +39,7 @@ require(['game'], function(Game) {
     if(e.keyCode === 90) { input.left = pressed; e.preventDefault(); }
     if(e.keyCode === 88) { input.right = pressed; e.preventDefault(); }
     if(e.keyCode === 76) { input.up = pressed; e.preventDefault(); }
+    if(e.keyCode === 188) { input.down = pressed; e.preventDefault(); }
   }
   
   document.addEventListener('keydown', onKey, false);
