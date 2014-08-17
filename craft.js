@@ -6,6 +6,7 @@ define(['gl-matrix-min'], function(M) {
     terrain.normalAt(this.normal, this.pos[0], this.pos[1]);
     this.at = M.vec3.clone([1, 0, 0]);
     this.movement = M.vec3.create();
+    this.normalMovement = M.vec3.create();
     
     function fixAt() {
       var d = M.vec3.dot(self.normal, self.at);
@@ -47,9 +48,14 @@ define(['gl-matrix-min'], function(M) {
         var d = M.vec3.dot(this.movement, groundNormal);
         if(d < 0) {
           M.vec3.scaleAndAdd(this.movement, this.movement, groundNormal, -d);
+          M.vec3.sub(delta, groundNormal, this.normal);
+          M.vec3.scaleAndAdd(this.normalMovement, this.normalMovement, delta, -d * 5);
         }
-        M.vec3.copy(this.normal, groundNormal);
       }
+      
+      M.vec3.scaleAndAdd(this.normal, this.normal, this.normalMovement, timeStep);
+      M.vec3.normalize(this.normal, this.normal);
+      M.vec3.scale(this.normalMovement, this.normalMovement, 1 - timeStep * 2);
 
       var right = v1;
       M.vec3.cross(right, this.at, this.normal);

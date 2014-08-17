@@ -18,7 +18,7 @@ define(['shader', 'gl-matrix-min'], function(Shader, M) {
       height[i] += ((a + b) * 9 - (a0 + b0) * 1) / 16 * factor + (Math.random() * 2 - 1) * scale;
     }
 
-    var x, y, i;
+    var x, y, i, h;
     for(var size = SIZE >> 1; size >= 1; size >>= 1) {
       var scale = Math.pow(size / SIZE * 2, 1.3) * SIZE / 8;
       for(x = 0; x < SIZE; x += size * 2) {
@@ -45,14 +45,16 @@ define(['shader', 'gl-matrix-min'], function(Shader, M) {
     var waterHeight = samples[Math.floor(samples.length / 3)];
     
     for(i = 0; i < SIZE*SIZE; ++i) {
-      height[i] -= waterHeight;
+      h = height[i] - waterHeight;
+      h = 0.4 * h + 0.0005 * Math.pow(h, 3);
+      height[i] = h;
     }
 
     this.heightAt = function(x, y) {
       x = Math.max(0, Math.min(SIZE, x));
       y = Math.max(0, Math.min(SIZE, y));
-      var xi = Math.min(SIZE-1, Math.floor(x));
-      var yi = Math.min(SIZE-1, Math.floor(y));
+      var xi = Math.min(SIZE-2, Math.floor(x));
+      var yi = Math.min(SIZE-2, Math.floor(y));
       var o = xi + yi * SIZE;
       x -= xi;
       y -= yi;
@@ -71,7 +73,7 @@ define(['shader', 'gl-matrix-min'], function(Shader, M) {
     var vertexData = new Float32Array(SIZE * SIZE* 4);
     for(y = 0; y < SIZE; ++y) {
       for(x = 0; x < SIZE; ++x) {
-        var h = height[index(x, y)];
+        h = height[index(x, y)];
         var h1 = height[index(x + 1, y)];
         vertexData[(x + y * SIZE) * 4 + 0] = x;
         vertexData[(x + y * SIZE) * 4 + 1] = y;
