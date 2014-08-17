@@ -1,8 +1,33 @@
-define(['terrain', 'craft', 'water', 'gl-matrix-min'], function(Terrain, Craft, Water, M) {
+define(['terrain', 'craft', 'water', 'beacon', 'gl-matrix-min'], function(Terrain, Craft, Water, Beacon, M) {
   return function(gl) {
     var terrain = new Terrain(gl);
     var craft = new Craft(terrain);
     var water = new Water(gl);
+    var beacon = new Beacon(gl);
+    
+    var waypoints = [];
+    var waypointCandidates = [];
+    for(var i = 0; i < 100; ++i) {
+      var candidate = {
+        x: Math.random() * 255,
+        y: Math.random() * 255,
+      };
+      candidate.z = terrain.heightAt(candidate.x, candidate.y);
+      candidate.score = Math.random() * (candidate.z === 0 ? 40 : candidate.z);
+      waypointCandidates.push(candidate);
+    }
+    waypointCandidates = waypointCandidates.sort(function(a, b) {
+      return a.score - b.score;
+    });
+    var w;
+    for(i = 0; i < 10; ++i) {
+      w = waypointCandidates[i];
+      waypoints.push([w.x, w.y, w.z]);
+    }
+    w = waypointCandidates[20];
+    craft.pos[0] = w.x;
+    craft.pos[1] = w.y;
+    craft.pos[2] = w.z;
     
     var projection = M.mat4.create();
     var camera = M.mat4.create();
@@ -11,7 +36,10 @@ define(['terrain', 'craft', 'water', 'gl-matrix-min'], function(Terrain, Craft, 
     var viewProjection = M.mat4.create();
     var tmp = M.vec3.create();
     
+    var time = 0;
+    
     this.update = function(timeStep, input) {
+      time += timeStep;
       craft.update(timeStep, input);
       var at = craft.at;
       var normal = craft.normal;
@@ -35,6 +63,14 @@ define(['terrain', 'craft', 'water', 'gl-matrix-min'], function(Terrain, Craft, 
       camera[14] = cameraPos[2];
       camera[15] = 1;
       M.mat4.invert(view, camera);
+      
+      for(var i = 0; i < waypoints.length; ++i) {
+        M.vec3.sub(tmp, waypoints[i], pos);
+        if(M.vec2.length(tmp) <= 1.5) {
+          waypoints.splice(i, 1);
+          break;
+        }
+      }
     };
     
     this.render = function() {
@@ -44,6 +80,10 @@ define(['terrain', 'craft', 'water', 'gl-matrix-min'], function(Terrain, Craft, 
     
       terrain.render(viewProjection, cameraPos);
       water.render(viewProjection);
+      
+      for(var i = 0; i < waypoints.length; ++i) {
+        beacon.render(viewProjection, cameraPos, waypoints[i], time);
+      }
     };
   };
 });

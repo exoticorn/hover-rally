@@ -34,15 +34,7 @@ define(['gl-matrix-min'], function(M) {
       M.vec3.sub(delta, this.pos, groundPos);
       var distance = M.vec3.dot(delta, groundNormal);
       var onGround = distance <= 0;
-      var onWater = false;
-      if(this.pos[2] < 0 && (!onGround || groundPos[2] < 0)) {
-        onWater = true;
-        onGround = true;
-        distance = this.pos[2];
-        groundNormal[0] = 0;
-        groundNormal[1] = 0;
-        groundNormal[2] = 1;
-      }
+      var onWater = onGround && groundPos[2] === 0;
       if(onGround) {
         M.vec3.scaleAndAdd(this.pos, this.pos, groundNormal, -distance);
         var d = M.vec3.dot(this.movement, groundNormal);
@@ -69,7 +61,7 @@ define(['gl-matrix-min'], function(M) {
       fixAt();
       
       if(onGround) {
-        var factor = onWater ? 0.2 : 1;
+        var factor = onWater ? 0.35 : 1;
         var rightMovement = M.vec3.dot(right, this.movement);
         var rightAmount = 0;
         if(rightMovement > 0) {
