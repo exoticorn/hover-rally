@@ -92,8 +92,7 @@ define(['shader', 'gl-matrix-min'], function(Shader, M) {
     var vertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
-    vertexData = undefined;
-    
+
     var indexData = new Uint16Array((SIZE-1) * (SIZE-1) * 6);
     for(y = 0; y < SIZE-1; ++y) {
       for(x = 0; x < SIZE-1; ++x) {
@@ -109,8 +108,7 @@ define(['shader', 'gl-matrix-min'], function(Shader, M) {
     var indexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexData, gl.STATIC_DRAW);
-    indexData = undefined;
-    
+
     var shader = new Shader(gl, {
       shared: [
         'varying lowp vec3 color;',
