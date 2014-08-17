@@ -20,7 +20,7 @@ define(['shader', 'gl-matrix-min'], function(Shader, M) {
 
     var x, y, i, h;
     for(var size = SIZE >> 1; size >= 1; size >>= 1) {
-      var scale = Math.pow(size / SIZE * 2, 1.3) * SIZE / 8;
+      var scale = Math.pow(Math.atan(size / SIZE * 2 * 4) / 4, 1.3) * SIZE / 4;
       for(x = 0; x < SIZE; x += size * 2) {
         for(y = 0; y < SIZE; y += size * 2) {
           linear(x, y, size, 0, scale, 1);
@@ -41,7 +41,7 @@ define(['shader', 'gl-matrix-min'], function(Shader, M) {
         samples.push(height[x + y * SIZE]);
       }
     }
-    samples.sort();
+    samples = samples.sort(function(a, b) { return a - b; });
     var waterHeight = samples[Math.floor(samples.length / 3)];
     
     for(i = 0; i < SIZE*SIZE; ++i) {
@@ -70,15 +70,22 @@ define(['shader', 'gl-matrix-min'], function(Shader, M) {
       M.vec3.normalize(out, out);
     };
 
-    var vertexData = new Float32Array(SIZE * SIZE* 4);
+    var vertexData = new ArrayBuffer(SIZE * SIZE * 12);
+    var vertexView8 = new Uint8Array(vertexData);
+    var vertexViewS8 = new Int8Array(vertexData);
+    var vertexViewFloat = new Float32Array(vertexData);
+    var normal = M.vec3.create();
     for(y = 0; y < SIZE; ++y) {
       for(x = 0; x < SIZE; ++x) {
         h = height[index(x, y)];
-        var h1 = height[index(x + 1, y)];
-        vertexData[(x + y * SIZE) * 4 + 0] = x;
-        vertexData[(x + y * SIZE) * 4 + 1] = y;
-        vertexData[(x + y * SIZE) * 4 + 2] = h;
-        vertexData[(x + y * SIZE) * 4 + 3] = h-h1;
+        i = x + y * SIZE;
+        vertexViewFloat[i * 3] = h;
+        this.normalAt(normal, x, y);
+        vertexView8[i * 12 + 4] = x;
+        vertexView8[i * 12 + 5] = y;
+        vertexViewS8[i * 12 + 6] = normal[0] * 127;
+        vertexViewS8[i * 12 + 7] = normal[1] * 127;
+        vertexViewS8[i * 12 + 8] = normal[2] * 127;
       }
     }
     
@@ -107,33 +114,45 @@ define(['shader', 'gl-matrix-min'], function(Shader, M) {
     var shader = new Shader(gl, {
       shared: [
         'varying lowp vec3 color;',
-        'varying mediump float height;'
+        'varying mediump vec3 r;',
       ],
       vertex: [
-        'attribute vec4 pos;',
+        'attribute vec2 pos;',
+        'attribute float height;',
+        'attribute vec3 normal;',
         'uniform mat4 viewProjection;',
+        'uniform vec3 cameraPos;',
         'void main() {',
-        '  color = vec3(0.5 + pos.w * 0.3);',
-        '  height = pos.z;',
-        '  gl_Position = viewProjection * vec4(pos.x, pos.y, pos.z, 1.0);',
+        '  color = vec3(1.0, 0.7, 0.5) * (0.5 + normal.x * 0.005);',
+        '  vec3 p = vec3(pos.x, pos.y, height);',
+        '  r = reflect(p - cameraPos, normal / 127.0);',
+        '  r = normalize(r);',
+        '  gl_Position = viewProjection * vec4(p, 1.0);',
         '}'
       ],
       fragment: [
         'void main() {',
-        '  gl_FragColor = vec4(color, 1.0);',
+        '  gl_FragColor = vec4(color + vec3(0.4, 0.6, 0.8) * (1.0 - length(r.xy)), 1.0);',
         '}'
       ]
     });
     
-    this.render = function(viewProjection) {
+    this.render = function(viewProjection, cameraPos) {
       shader.use();
       gl.uniformMatrix4fv(shader.viewProjection, false, viewProjection);
+      gl.uniform3fv(shader.cameraPos, cameraPos);
       gl.enableVertexAttribArray(shader.pos);
+      gl.enableVertexAttribArray(shader.height);
+      gl.enableVertexAttribArray(shader.normal);
       gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-      gl.vertexAttribPointer(shader.pos, 4, gl.FLOAT, false, 16, 0);
+      gl.vertexAttribPointer(shader.pos, 2, gl.UNSIGNED_BYTE, false, 12, 4);
+      gl.vertexAttribPointer(shader.height, 1, gl.FLOAT, false, 12, 0);
+      gl.vertexAttribPointer(shader.normal, 3, gl.BYTE, false, 12, 6);
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
       gl.drawElements(gl.TRIANGLES, (SIZE-1) * (SIZE-1) * 6, gl.UNSIGNED_SHORT, 0);
       gl.disableVertexAttribArray(shader.pos);
+      gl.disableVertexAttribArray(shader.height);
+      gl.disableVertexAttribArray(shader.normal);
     };
   };
 });

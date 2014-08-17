@@ -36,10 +36,10 @@ require(['game'], function(Game) {
       requestFrame();
       e.preventDefault();
     }
-    if(e.keyCode === 90) { input.left = pressed; e.preventDefault(); }
-    if(e.keyCode === 88) { input.right = pressed; e.preventDefault(); }
-    if(e.keyCode === 76) { input.up = pressed; e.preventDefault(); }
-    if(e.keyCode === 188) { input.down = pressed; e.preventDefault(); }
+    if(e.keyCode === 90 || e.keyCode === 37) { input.left = pressed; e.preventDefault(); }
+    if(e.keyCode === 88 || e.keyCode === 39) { input.right = pressed; e.preventDefault(); }
+    if(e.keyCode === 76 || e.keyCode === 38) { input.up = pressed; e.preventDefault(); }
+    if(e.keyCode === 188 || e.keyCode === 40) { input.down = pressed; e.preventDefault(); }
   }
   
   document.addEventListener('keydown', onKey, false);

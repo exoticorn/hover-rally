@@ -6,6 +6,7 @@ define(['terrain', 'craft', 'water', 'gl-matrix-min'], function(Terrain, Craft, 
     
     var projection = M.mat4.create();
     var camera = M.mat4.create();
+    var cameraPos = M.vec3.create();
     var view = M.mat4.create();
     var viewProjection = M.mat4.create();
     var tmp = M.vec3.create();
@@ -28,10 +29,10 @@ define(['terrain', 'craft', 'water', 'gl-matrix-min'], function(Terrain, Craft, 
       camera[9] = -at[1];
       camera[10] = -at[2];
       camera[11] = 0;
-      M.vec3.scaleAndAdd(tmp, pos, normal, 0.2);
-      camera[12] = tmp[0];
-      camera[13] = tmp[1];
-      camera[14] = tmp[2];
+      M.vec3.scaleAndAdd(cameraPos, pos, normal, 0.2);
+      camera[12] = cameraPos[0];
+      camera[13] = cameraPos[1];
+      camera[14] = cameraPos[2];
       camera[15] = 1;
       M.mat4.invert(view, camera);
     };
@@ -41,7 +42,7 @@ define(['terrain', 'craft', 'water', 'gl-matrix-min'], function(Terrain, Craft, 
       
       M.mat4.mul(viewProjection, projection, view);
     
-      terrain.render(viewProjection);
+      terrain.render(viewProjection, cameraPos);
       water.render(viewProjection);
     };
   };

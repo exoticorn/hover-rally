@@ -59,11 +59,12 @@ define(['gl-matrix-min'], function(M) {
 
       var right = v1;
       M.vec3.cross(right, this.at, this.normal);
-      var turn = 0;
-      if(input.left) turn -= 0.1;
-      if(input.right) turn += 0.1;
-      if(turn !== 0) {
-        M.vec3.scaleAndAdd(this.at, this.at, right, turn * timeStep * 10);
+      if(input.left || input.right) {
+        M.vec3.cross(v2, this.movement, this.normal);
+        var l = M.vec3.length(v2);
+        var turn = input.left ? -1 : 1;
+        var s = Math.abs(l) > 0.001 ? Math.atan(l * 1.5) / 1.5 / l : 0;
+        M.vec3.scaleAndAdd(this.at, this.at, v2, turn * timeStep * s);
       }
       fixAt();
       
