@@ -1,11 +1,11 @@
-define(['terrain', 'craft', 'water', 'beacon', 'printer', 'gl-matrix-min'], function(Terrain, Craft, Water, Beacon, Printer, M) {
+define(['terrain', 'craft', 'water', 'waypoint', 'printer', 'gl-matrix-min'], function(Terrain, Craft, Water, Beacon, Printer, M) {
   return function(gl) {
     var terrain = new Terrain(gl);
     var craft = new Craft(terrain);
     var water = new Water(gl);
     var beacon = new Beacon(gl);
     var printer = new Printer(gl);
-    
+
     var waypoints = [];
     var waypointCandidates = [];
     for(var i = 0; i < 100; ++i) {
@@ -50,7 +50,7 @@ define(['terrain', 'craft', 'water', 'beacon', 'printer', 'gl-matrix-min'], func
     var time = 0;
     var timer = 100;
     var pauseTime = 15;
-    
+
     this.update = function(timeStep, input) {
       time += timeStep;
       pauseTime = Math.max(0, pauseTime - timeStep);
@@ -80,7 +80,7 @@ define(['terrain', 'craft', 'water', 'beacon', 'printer', 'gl-matrix-min'], func
       camera[14] = cameraPos[2];
       camera[15] = 1;
       M.mat4.invert(view, camera);
-      
+
       for(var i = 0; i < waypoints.length; ++i) {
         M.vec3.sub(tmp, waypoints[i], pos);
         if(M.vec2.length(tmp) <= 2) {
@@ -90,7 +90,7 @@ define(['terrain', 'craft', 'water', 'beacon', 'printer', 'gl-matrix-min'], func
         }
       }
     };
-    
+
     this.render = function() {
       var screenWidth = gl.drawingBufferWidth;
       var screenHeight = gl.drawingBufferHeight;
@@ -101,14 +101,14 @@ define(['terrain', 'craft', 'water', 'beacon', 'printer', 'gl-matrix-min'], func
       screenSystem[3] = 1;
 
       M.mat4.mul(viewProjection, projection, view);
-    
+
       terrain.render(viewProjection, cameraPos);
       water.render(viewProjection);
-      
+
       for(var i = 0; i < waypoints.length; ++i) {
         beacon.render(viewProjection, cameraPos, waypoints[i], time);
       }
-      
+
       printer.render(screenSystem, 'Waypoints left: ' + waypoints.length, 40, 40);
       if(pauseTime > 0) {
         printer.render(screenSystem, 'Pause: ' + Math.ceil(pauseTime), 40, 70);
