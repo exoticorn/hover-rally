@@ -8,27 +8,37 @@ define(['terrain', 'craft', 'water', 'beacon', 'gl-matrix-min'], function(Terrai
     var waypoints = [];
     var waypointCandidates = [];
     for(var i = 0; i < 100; ++i) {
+      var x = 16 + Math.random() * 224;
+      var y = 16 + Math.random() * 224;
+      var z = terrain.heightAt(x, y);
       var candidate = {
-        x: Math.random() * 255,
-        y: Math.random() * 255,
+        pos: [x, y, z],
+        baseScore: Math.random() * (z === 0 ? 40 : z)
       };
-      candidate.z = terrain.heightAt(candidate.x, candidate.y);
-      candidate.score = Math.random() * (candidate.z === 0 ? 40 : candidate.z);
       waypointCandidates.push(candidate);
     }
-    waypointCandidates = waypointCandidates.sort(function(a, b) {
-      return a.score - b.score;
-    });
     var w;
-    for(i = 0; i < 10; ++i) {
-      w = waypointCandidates[i];
-      waypoints.push([w.x, w.y, w.z]);
+    var tmp = M.vec3.create();
+    var cmpCandidates = function(a, b) {
+      return a.score - b.score;
+    };
+    while(waypoints.length < 20) {
+      for(i = 0; i < waypointCandidates.length; ++i) {
+        w = waypointCandidates[i];
+        var p = w.pos;
+        var score = w.baseScore;
+        for(var j = 0; j < waypoints.length; ++j) {
+          M.vec3.sub(tmp, p, waypoints[j]);
+          score /= Math.sqrt(M.vec3.length(tmp));
+        }
+        w.score = score;
+      }
+      waypointCandidates = waypointCandidates.sort(cmpCandidates);
+      waypoints.push(waypointCandidates.shift().pos);
     }
     w = waypointCandidates[20];
-    craft.pos[0] = w.x;
-    craft.pos[1] = w.y;
-    craft.pos[2] = w.z;
-    
+    M.vec3.copy(craft.pos, waypointCandidates.shift().pos);
+
     var projection = M.mat4.create();
     var camera = M.mat4.create();
     var cameraPos = M.vec3.create();
@@ -66,7 +76,7 @@ define(['terrain', 'craft', 'water', 'beacon', 'gl-matrix-min'], function(Terrai
       
       for(var i = 0; i < waypoints.length; ++i) {
         M.vec3.sub(tmp, waypoints[i], pos);
-        if(M.vec2.length(tmp) <= 1.5) {
+        if(M.vec2.length(tmp) <= 2) {
           waypoints.splice(i, 1);
           break;
         }

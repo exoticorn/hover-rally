@@ -41,7 +41,7 @@ define(['gl-matrix-min'], function(M) {
         if(d < 0) {
           M.vec3.scaleAndAdd(this.movement, this.movement, groundNormal, -d);
           M.vec3.sub(delta, groundNormal, this.normal);
-          M.vec3.scaleAndAdd(this.normalMovement, this.normalMovement, delta, -d * 5);
+          M.vec3.scaleAndAdd(this.normalMovement, this.normalMovement, delta, Math.min(2, d * -5));
         }
       }
       
@@ -81,6 +81,9 @@ define(['gl-matrix-min'], function(M) {
         
         if(targetSpeed) {
           var force = Math.max(-1, Math.min(1, (targetSpeed - speed) * 0.5));
+          if(targetSpeed * speed < 0) {
+            force *= 4;
+          }
           M.vec3.scaleAndAdd(this.movement, this.movement, this.at, timeStep * force * factor);
         }
       }
